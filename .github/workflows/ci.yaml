@@ -48,7 +48,7 @@ jobs:
 
     - name: Update image tag in deployment.yaml
       run: |
-        sed -i "s|image: .*|image: $IMAGE|" myapp-gitops/${{ env.DEPLOYMENT_PATH }}
+        sed -i "s|image: .*|image: $IMAGE|" gitops/${{ env.DEPLOYMENT_PATH }}
 
     - name: Commit and push to GitOps repo
       run: |
