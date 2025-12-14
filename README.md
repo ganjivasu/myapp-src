@@ -1,5 +1,6 @@
 **Check below softwares are available in your machine
 **
+
 aws --version
 kubectl version --client
 eksctl version
@@ -8,6 +9,7 @@ docker --version
 
 **Create Cluster
 **
+
 eksctl create cluster \
   --name myapp-cluster \
   --region us-east-1 \
@@ -16,20 +18,24 @@ eksctl create cluster \
 
 **Configure kubectl & verify
 **
+
 aws eks update-kubeconfig --name myapp-cluster --region us-east-1
 
 kubectl get nodes
 
 **Create ECR Repository
 **
+
 aws ecr create-repository --repository-name myapp
 
 **Login to ECR**
+
 aws ecr get-login-password --region us-east-1 \
 | docker login --username AWS --password-stdin <ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com
 
 **Repo Structure
 **
+
 myapp-src/
 ├── app.py
 ├── requirements.txt
@@ -38,6 +44,7 @@ myapp-src/
 
 **CP Repo Structure
 **
+
 myapp-gitops/
 └── myapp/
     ├── dev/
@@ -48,6 +55,7 @@ myapp-gitops/
 
 **Create namespaces
 **
+
 kubectl create ns dev
 kubectl create ns pt
 kubectl create ns qa
@@ -56,6 +64,7 @@ kubectl create ns prod
 
 **Install argocd on EKS
 **
+
 kubectl create namespace argocd
 kubectl apply -n argocd \
   -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
@@ -63,11 +72,13 @@ kubectl apply -n argocd \
 
 **Expose argocd
 **
+
 kubectl port-forward svc/argocd-server -n argocd 8080:443
 
 
 **Create argocd application
 **
+
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -87,6 +98,7 @@ spec:
 
 
 **apply**
+
 kubectl apply -f myapp-dev.yaml
 
 
@@ -113,6 +125,7 @@ Audience: sts.amazonaws.com
 
 **Add Identity Provider
 **
+
 Provider type: OpenID Connect
 Provider URL: https://token.actions.githubusercontent.com
 Audience: sts.amazonaws.com
