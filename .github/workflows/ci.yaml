@@ -8,6 +8,12 @@ permissions:
   id-token: write
   contents: read
 
+env:
+  IMAGE: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/myapp:${{ github.sha }}
+  ECR_REPO: myapp
+  GITOPS_REPO: ganjivasu/myapp-gitops
+  DEPLOYMENT_PATH: myapp/dev/deployment.yaml
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -33,3 +39,22 @@ jobs:
         docker build -t $IMAGE .
         docker push $IMAGE
 
+
+    - name: Checkout GitOps repo
+      uses: actions/checkout@v4
+      with:
+        repository: ${{ env.GITOPS_REPO }}
+        path: myapp
+
+    - name: Update image tag in deployment.yaml
+      run: |
+        sed -i "s|image: .*|image: $IMAGE|" gitops/${{ env.DEPLOYMENT_PATH }}
+
+    - name: Commit and push to GitOps repo
+      run: |
+        cd gitops
+        git config user.name "ci-bot"
+        git config user.email "ci-bot@example.com"
+        git add ${{ env.DEPLOYMENT_PATH }}
+        git commit -m "Deploy new image: $GITHUB_SHA"
+        git push origin ${{ env.GITOPS_BRANCH }}
