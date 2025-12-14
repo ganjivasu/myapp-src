@@ -37,7 +37,6 @@ jobs:
       run: |
         IMAGE_TAG=${GITHUB_SHA}
         docker build -t $IMAGE .
-        docker tag myapp $IMAGE
         docker push $IMAGE
         
         # Get the immutable digest
