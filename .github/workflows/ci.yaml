@@ -15,6 +15,7 @@ env:
   ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com
   GITOPS_REPO: ganjivasu/myapp-gitops
   DEV_PATH: myapp/dev/deployment.yaml
+  PT_PATH: myapp/pt/deployment.yaml
   QA_PATH: myapp/qa/deployment.yaml
   PROD_PATH: myapp/prod/deployment.yaml
 
@@ -80,12 +81,35 @@ jobs:
         git commit -m "Deploy immutable image $GITHUB_SHA to Dev"
         git push origin main
 
+    #Create PR for PT promotion
+    - name: Create PR to PT
+      run: |
+        cd gitops
+        git checkout -b promote-to-pt
+        cp ${{ env.DEV_PATH }} ${{ env.PT_PATH }}
+    
+        # Replace namespace for QA
+        sed -i "s|namespace: dev|namespace: pt|" ${{ env.PT_PATH }}
+    
+        git add ${{ env.PT_PATH }}
+        git commit -m "Promote immutable image $GITHUB_SHA to PT"
+        git push origin promote-to-pt
+        gh pr create --title "Promote to PT: $GITHUB_SHA" \
+                     --body "Automatic promotion from Dev" \
+                     --base main --head promote-to-pt
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUBTOKEN }}
+
     #Create PR for QA promotion
     - name: Create PR to QA
       run: |
         cd gitops
         git checkout -b promote-to-qa
         cp ${{ env.DEV_PATH }} ${{ env.QA_PATH }}
+    
+        # Replace namespace for QA
+        sed -i "s|namespace: dev|namespace: qa|" ${{ env.QA_PATH }}
+    
         git add ${{ env.QA_PATH }}
         git commit -m "Promote immutable image $GITHUB_SHA to QA"
         git push origin promote-to-qa
@@ -102,6 +126,10 @@ jobs:
         cd gitops
         git checkout -b promote-to-prod
         cp ${{ env.DEV_PATH }} ${{ env.PROD_PATH }}
+    
+        # Replace namespace for Prod
+        sed -i "s|namespace: dev|namespace: prod|" ${{ env.PROD_PATH }}
+    
         git add ${{ env.PROD_PATH }}
         git commit -m "Promote immutable image $GITHUB_SHA to Prod"
         git push origin promote-to-prod
