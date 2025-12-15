@@ -86,12 +86,20 @@ jobs:
         git add ${{ env.DEV_PATH }}
         git commit -m "Deploy immutable image $GITHUB_SHA to Dev" || echo "No changes to commit"
         git push origin main
+        
     #Configure kubectl
     - name: Configure kubectl for EKS
       run: |
         aws eks update-kubeconfig \
           --region $AWS_REGION \
-          --name myapp-cluster
+          --name myapp-cluster \
+          --role-arn arn:aws:iam::281762848319:role/github-actions-ci-role
+          
+    #verify eks access
+    - name: Verify EKS access
+      run: |
+        kubectl get nodes
+        kubectl auth can-i get jobs -n dev
 
     #Wait for ArgoCD to sync
     - name: Wait for ArgoCD sync
