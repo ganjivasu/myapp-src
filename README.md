@@ -138,3 +138,10 @@ Attach permissions: AmazonEC2ContainerRegistryPowerUser
 Click Next
 Role Name: github-actions-ecr-role
 
+
+
+Clear ECR Repository old Images using below command
+
+ aws ecr put-lifecycle-policy \
+  --repository-name myapp \
+  --lifecycle-policy-text file://lifecycle.json
