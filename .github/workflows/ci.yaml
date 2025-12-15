@@ -1,4 +1,4 @@
-name: CI Build
+name: CI Build & GitOps Promotion
 
 on:
   push:
@@ -14,27 +14,32 @@ env:
   ECR_REPO: myapp
   ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com
   GITOPS_REPO: ganjivasu/myapp-gitops
-  DEPLOYMENT_PATH: myapp/dev/deployment.yaml
+  DEV_PATH: myapp/dev/deployment.yaml
+  QA_PATH: myapp/qa/deployment.yaml
+  PROD_PATH: myapp/prod/deployment.yaml
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
+    #Checkout App repo
     - name: Checkout App Repo
       uses: actions/checkout@v3
 
+    #Configure AWS credentials
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v2
       with:
         role-to-assume: ${{ secrets.AWS_ROLE }}
-        aws-region: us-east-1
+        aws-region: ${{ env.AWS_REGION }}
 
+    #Login to ECR
     - name: Login to ECR
       run: |
-        aws ecr get-login-password \
-        | docker login --username AWS --password-stdin $ECR_REGISTRY
+        aws ecr get-login-password | docker login --username AWS --password-stdin $ECR_REGISTRY
 
+    #Build & push immutable image
     - name: Build and Push Image
       run: |
         IMAGE_TAG=${GITHUB_SHA}
@@ -43,15 +48,16 @@ jobs:
         docker build -t $IMAGE .
         docker push $IMAGE
 
+        # Get immutable digest
         DIGEST=$(aws ecr describe-images \
           --repository-name $ECR_REPO \
           --image-ids imageTag=$IMAGE_TAG \
-          --query 'imageDetails[0].imageDigest' \
-          --output text)
+          --query 'imageDetails[0].imageDigest' --output text)
 
         IMMUTABLE_IMAGE=$ECR_REGISTRY/$ECR_REPO@$DIGEST
         echo "IMMUTABLE_IMAGE=$IMMUTABLE_IMAGE" >> $GITHUB_ENV
 
+    #Checkout GitOps repo
     - name: Checkout GitOps repo
       uses: actions/checkout@v4
       with:
@@ -59,15 +65,48 @@ jobs:
         token: ${{ secrets.GITHUBTOKEN }}
         path: gitops
 
-    - name: Update Dev deployment with immutable image
+    #Update Dev deployment
+    - name: Update Dev deployment.yaml
       run: |
-        sed -i "s|image: .*|image: $IMMUTABLE_IMAGE|" gitops/${{ env.DEPLOYMENT_PATH }}
+        sed -i "s|image: .*|image: $IMMUTABLE_IMAGE|" gitops/${{ env.DEV_PATH }}
 
-    - name: Commit and push Dev deployment
+    #Commit & push Dev
+    - name: Commit and push Dev
       run: |
         cd gitops
         git config user.name "ci-bot"
         git config user.email "ci-bot@example.com"
-        git add ${{ env.DEPLOYMENT_PATH }}
-        git commit -m "Deploy immutable image ${GITHUB_SHA} to Dev"
+        git add ${{ env.DEV_PATH }}
+        git commit -m "Deploy immutable image $GITHUB_SHA to Dev"
         git push origin main
+
+    #Create PR for QA promotion
+    - name: Create PR to QA
+      run: |
+        cd gitops
+        git checkout -b promote-to-qa
+        cp ${{ env.DEV_PATH }} ${{ env.QA_PATH }}
+        git add ${{ env.QA_PATH }}
+        git commit -m "Promote immutable image $GITHUB_SHA to QA"
+        git push origin promote-to-qa
+        gh pr create --title "Promote to QA: $GITHUB_SHA" \
+                     --body "Automatic promotion from Dev" \
+                     --base main --head promote-to-qa
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUBTOKEN }}
+
+    #Create PR for Prod promotion
+    - name: Create PR to Prod
+      if: success()
+      run: |
+        cd gitops
+        git checkout -b promote-to-prod
+        cp ${{ env.DEV_PATH }} ${{ env.PROD_PATH }}
+        git add ${{ env.PROD_PATH }}
+        git commit -m "Promote immutable image $GITHUB_SHA to Prod"
+        git push origin promote-to-prod
+        gh pr create --title "Promote to Prod: $GITHUB_SHA" \
+                     --body "Automatic promotion from Dev" \
+                     --base main --head promote-to-prod
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUBTOKEN }}
