@@ -38,7 +38,7 @@ jobs:
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v2
       with:
-        role-to-assume: ${{ secrets.AWS_ROLE }}
+        role-to-assume: arn:aws:iam::281762848319:role/github-actions-ci-role
         aws-region: ${{ env.AWS_REGION }}
 
     #Login to ECR
@@ -92,8 +92,7 @@ jobs:
       run: |
         aws eks update-kubeconfig \
           --region $AWS_REGION \
-          --name myapp-cluster \
-          --role-arn arn:aws:iam::281762848319:role/github-actions-ci-role
+          --name myapp-cluster
           
     #verify eks access
     - name: Verify EKS access
