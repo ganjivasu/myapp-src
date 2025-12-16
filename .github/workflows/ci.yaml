@@ -93,7 +93,14 @@ jobs:
         aws eks update-kubeconfig \
           --region $AWS_REGION \
           --name myapp-cluster
-          
+
+    #verify kubectl can authenticate using kubeconfig
+    - name: Sanity check EKS access
+      run: |
+        kubectl config current-context
+        kubectl get nodes
+        kubectl auth can-i get jobs -n dev
+      
     #verify eks access
     - name: Verify EKS access
       run: |
