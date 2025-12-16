@@ -34,6 +34,13 @@ jobs:
     - name: Make smoke-test script executable
       run: chmod +x smoke-test.sh
 
+    #Debug OIDC
+    - name: Debug OIDC
+      run: |
+        echo "ACTIONS_ID_TOKEN_REQUEST_URL=$ACTIONS_ID_TOKEN_REQUEST_URL"
+        echo "ACTIONS_ID_TOKEN_REQUEST_TOKEN=$ACTIONS_ID_TOKEN_REQUEST_TOKEN"
+    
+
     #Configure AWS credentials
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v2
