@@ -118,10 +118,10 @@ jobs:
     #Wait for ArgoCD to sync
     - name: Wait for ArgoCD sync
       run: sleep 30
-
+        
     #Run smoke test job
     - name: Apply smoke test Job
-      run: kubectl apply -f gitops/dev/smoke-test.yaml -n dev
+      run: kubectl apply -f gitops/myapp/dev/smoke-test.yaml -n dev
       
     #Dev smoke test
     - name: Wait for Dev smoke test
