@@ -42,7 +42,7 @@ myapp-src/
 ├── Dockerfile
 └── .github/workflows/ci.yaml
 
-**CP Repo Structure
+**CD Repo Structure
 **
 
 myapp-gitops/
