@@ -97,6 +97,7 @@ jobs:
     #verify eks access
     - name: Verify EKS access
       run: |
+        aws sts get-caller-identity
         kubectl get nodes
         kubectl auth can-i get jobs -n dev
 
