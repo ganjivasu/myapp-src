@@ -139,7 +139,6 @@ Click Next
 Role Name: github-actions-ecr-role
 
 
-
 Clear ECR Repository old Images using below command
 
  aws ecr put-lifecycle-policy \
