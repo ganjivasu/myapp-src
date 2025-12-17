@@ -89,8 +89,10 @@ metadata:
   name: myapp-dev
   namespace: argocd
 spec:
+  project: default
   source:
-    repoURL: https://github.com/<yourname>/myapp-gitops
+    repoURL: https://github.com/ganjivasu/myapp-gitops
+    targetRevision: main
     path: myapp/dev
   destination:
     server: https://kubernetes.default.svc
@@ -99,6 +101,8 @@ spec:
     automated:
       prune: true
       selfHeal: true
+    syncOptions:
+    - CreateNamespace=true
 
 
 **apply**
@@ -144,3 +148,6 @@ Clear ECR Repository old Images using below command
  aws ecr put-lifecycle-policy \
   --repository-name myapp \
   --lifecycle-policy-text file://lifecycle.json
+
+#Delete Cluster
+eksctl delete cluster --name myapp-cluster --region us-east-1

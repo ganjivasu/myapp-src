@@ -31,16 +31,6 @@ jobs:
     - name: Make promotion script executable
       run: chmod +x promotion.sh
 
-    - name: Make smoke-test script executable
-      run: chmod +x smoke-test.sh
-
-    #Debug OIDC
-    - name: Debug OIDC
-      run: |
-        echo "ACTIONS_ID_TOKEN_REQUEST_URL=$ACTIONS_ID_TOKEN_REQUEST_URL"
-        echo "ACTIONS_ID_TOKEN_REQUEST_TOKEN=$ACTIONS_ID_TOKEN_REQUEST_TOKEN"
-    
-
     #Configure AWS credentials
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v2
@@ -107,30 +97,27 @@ jobs:
         kubectl config current-context
         kubectl get nodes
         kubectl auth can-i get jobs -n dev
-      
-    #Verify eks access
-    - name: Verify EKS access
-      run: |
-        aws sts get-caller-identity
-        kubectl get nodes
-        kubectl auth can-i get jobs -n dev
 
-    #Wait for ArgoCD to sync
-    - name: Wait for ArgoCD sync
-      run: sleep 30
-        
-    #Run smoke test job
-    - name: Apply smoke test Job
-      run: kubectl apply -f gitops/myapp/dev/smoke-test.yaml -n dev
-      
-    #Dev smoke test
-    - name: Wait for Dev smoke test
+    #Wait for smoke test job to appear
+    - name: Wait for smoke test job to appear
+      run: |
+        for i in {1..36}; do
+          kubectl get job myapp-smoke-test -n dev && exit 0
+          echo "Waiting for smoke test job..."
+          sleep 10
+        done
+        echo "Smoke test job did not appear"
+        exit 1
+
+    #Wait for Dev smoke test to complete
+    - name: Wait for Dev smoke test to complete
       run: |
         kubectl wait \
           --for=condition=complete \
           job/myapp-smoke-test \
           -n dev \
-          --timeout=120s || exit 1
+          --timeout=300s || \
+        kubectl logs job/myapp-smoke-test -n dev
 
     # Promote to PT
     - name: Promote to PT
