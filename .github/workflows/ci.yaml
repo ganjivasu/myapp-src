@@ -102,26 +102,27 @@ jobs:
         kubectl get nodes
         kubectl auth can-i get jobs -n dev
 
+    # Wait for ArgoCD to sync
+    - name: Wait for ArgoCD sync
+      run: sleep 90
+
     #Wait for smoke test job to appear
-    - name: Wait for smoke test job to appear
+    - name: Wait for smoke test job
       run: |
         for i in {1..36}; do
-          kubectl get job myapp-smoke-test -n dev && exit 0
-          echo "Waiting for smoke test job..."
+          kubectl get job myapp-smoke-test -n dev && break
+          echo "Waiting for ArgoCD to create smoke test job..."
           sleep 10
         done
-        echo "Smoke test job did not appear"
-        exit 1
 
     #Wait for Dev smoke test to complete
-    - name: Wait for Dev smoke test to complete
+    - name: Wait for smoke test to complete
       run: |
         kubectl wait \
           --for=condition=complete \
           job/myapp-smoke-test \
           -n dev \
-          --timeout=300s || \
-        kubectl logs job/myapp-smoke-test -n dev
+          --timeout=300s
 
     # Promote to PT
     - name: Promote to PT
