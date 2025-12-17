@@ -101,6 +101,18 @@ jobs:
         kubectl config current-context
         kubectl get nodes
         kubectl auth can-i get jobs -n dev
+    #Wait for ArgoCD app sync
+    - name: Wait for ArgoCD app sync
+      run: |
+        argocd login $ARGOCD_SERVER \
+          --username admin \
+          --password $ARGOCD_PASSWORD \
+          --insecure
+    
+        argocd app wait myapp-dev \
+          --health \
+          --sync \
+          --timeout 600
 
     # Wait for ArgoCD to sync
     - name: Wait for ArgoCD sync
@@ -118,11 +130,10 @@ jobs:
     #Wait for Dev smoke test to complete
     - name: Wait for smoke test to complete
       run: |
-        kubectl wait \
-          --for=condition=complete \
-          job/myapp-smoke-test \
-          -n dev \
-          --timeout=300s
+        argocd app wait myapp-dev \
+          --sync \
+          --health \
+          --timeout 300
 
     # Promote to PT
     - name: Promote to PT
