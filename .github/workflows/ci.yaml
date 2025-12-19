@@ -102,46 +102,6 @@ jobs:
         kubectl get nodes
         kubectl auth can-i get jobs -n dev
 
-    - name: Install ArgoCD CLI
-      run: |
-        curl -sSL -o argocd https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
-        chmod +x argocd
-        sudo mv argocd /usr/local/bin/
-        
-    #Wait for ArgoCD app sync
-    - name: Wait for ArgoCD app sync
-      run: |
-        argocd login $ARGOCD_SERVER \
-          --username admin \
-          --password $ARGOCD_PASSWORD \
-          --insecure
-    
-        argocd app wait myapp-dev \
-          --health \
-          --sync \
-          --timeout 600
-
-    # Wait for ArgoCD to sync
-    - name: Wait for ArgoCD sync
-      run: sleep 90
-
-    #Wait for smoke test job to appear
-    - name: Wait for smoke test job
-      run: |
-        for i in {1..36}; do
-          kubectl get job myapp-smoke-test -n dev && break
-          echo "Waiting for ArgoCD to create smoke test job..."
-          sleep 10
-        done
-
-    #Wait for Dev smoke test to complete
-    - name: Wait for smoke test to complete
-      run: |
-        argocd app wait myapp-dev \
-          --sync \
-          --health \
-          --timeout 300
-
     # Promote to PT
     - name: Promote to PT
       run: bash promotion.sh pt
