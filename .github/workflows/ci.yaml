@@ -104,12 +104,35 @@ jobs:
         GITHUB_SHA: ${{ github.sha }}
         GITHUB_TOKEN: ${{ secrets.GITHUBTOKEN }}
 
+    - name: Capture previous Prod image
+      run: |
+        cd gitops
+        PREV_IMAGE=$(grep "image:" ${{ env.PROD_PATH }} | awk '{print $2}')
+        echo "PREV_PROD_IMAGE=$PREV_IMAGE" >> $GITHUB_ENV
+
+
+
     # Promote to Prod
     - name: Promote to Prod
-      if: success()
+      if: github.ref == 'refs/heads/main'
+      environment:
+        name: prod
       run: bash promotion.sh prod
       env:
         IMMUTABLE_IMAGE: ${{ env.IMMUTABLE_IMAGE }}
         GITHUB_SHA: ${{ github.sha }}
         GITHUB_TOKEN: ${{ secrets.GITHUBTOKEN }}
 
+    - name: Rollback Prod on failure
+      if: failure()
+      run: |
+        echo "Rolling back Prod to previous image: $PREV_PROD_IMAGE"
+        cd gitops
+
+        sed -i "s|image: .*|image: $PREV_PROD_IMAGE|" ${{ env.PROD_PATH }}
+
+        git config user.name "ci-bot"
+        git config user.email "ci-bot@example.com"
+        git add ${{ env.PROD_PATH }}
+        git commit -m "Rollback Prod to previous image"
+        git push origin main

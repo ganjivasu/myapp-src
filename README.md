@@ -149,5 +149,15 @@ Clear ECR Repository old Images using below command
   --repository-name myapp \
   --lifecycle-policy-text file://lifecycle.json
 
+#Install Argo Rollouts (one-time)
+kubectl create namespace argo-rollouts
+
+kubectl apply -n argo-rollouts \
+  -f https://github.com/argoproj/argo-rollouts/releases/latest/download/install.yaml
+
+#verify
+kubectl get pods -n argo-rollouts
+
 #Delete Cluster
 eksctl delete cluster --name myapp-cluster --region us-east-1
+
