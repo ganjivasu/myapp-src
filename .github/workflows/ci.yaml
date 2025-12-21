@@ -127,9 +127,9 @@ jobs:
           token: ${{ secrets.GITHUBTOKEN }}
           path: gitops
   
-      - name: Debug build output
-        run: |
-          echo "Build immutable image: ${{ needs.build.outputs.immutable_image }}"
+      - name: Debug immutable image
+        run: | 
+          echo "Build output: ${{ needs.build.outputs.immutable_image }}"
   
       - name: Set IMMUTABLE_IMAGE env
         run: echo "IMMUTABLE_IMAGE=${{ needs.build.outputs.immutable_image }}" >> $GITHUB_ENV
@@ -140,4 +140,3 @@ jobs:
           ./promotion.sh prod
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUBTOKEN }}
-
