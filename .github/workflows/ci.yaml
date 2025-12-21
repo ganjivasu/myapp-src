@@ -23,7 +23,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     outputs:
-      immutable_image: ${{ steps.set_job_output.outputs.immutable_image }}
+      immutable_image: ${{ steps.build-image.outputs.immutable_image }}
 
     steps:
       # Checkout App repo
@@ -51,28 +51,18 @@ jobs:
         run: |
           IMAGE_TAG=${GITHUB_SHA}
           IMAGE=$ECR_REGISTRY/$ECR_REPO:$IMAGE_TAG
-
           docker build -t $IMAGE .
           docker push $IMAGE
-
-          # Retry to get digest from ECR
-          for i in {1..5}; do
-            DIGEST=$(aws ecr describe-images \
-              --repository-name $ECR_REPO \
-              --image-ids imageTag=$IMAGE_TAG \
-              --query 'imageDetails[0].imageDigest' --output text)
-            if [ -n "$DIGEST" ]; then break; fi
-            echo "Waiting for image to appear in ECR..."
-            sleep 5
-          done
-
-          if [ -z "$DIGEST" ]; then
-            echo "ERROR: Failed to get image digest"
-            exit 1
-          fi
-
+      
+          DIGEST=$(aws ecr describe-images \
+            --repository-name $ECR_REPO \
+            --image-ids imageTag=$IMAGE_TAG \
+            --query 'imageDetails[0].imageDigest' --output text)
+      
           IMMUTABLE_IMAGE=$ECR_REGISTRY/$ECR_REPO@$DIGEST
+      
           echo "immutable_image=$IMMUTABLE_IMAGE" >> $GITHUB_OUTPUT
+
 
       # Set job output for Prod
       - name: Set job output
@@ -137,10 +127,11 @@ jobs:
           token: ${{ secrets.GITHUBTOKEN }}
           path: gitops
   
-      - name: Debug immutable image
-        run: echo "IMMUTABLE_IMAGE=${{ needs.build.outputs.immutable_image }}"
+      - name: Debug build output
+        run: 
+          echo "Build immutable image: ${{ needs.build.outputs.immutable_image }}"
   
-      - name: Set IMMUTABLE_IMAGE for script
+      - name: Set IMMUTABLE_IMAGE env
         run: echo "IMMUTABLE_IMAGE=${{ needs.build.outputs.immutable_image }}" >> $GITHUB_ENV
   
       - name: Promote to Prod
@@ -149,12 +140,7 @@ jobs:
           ./promotion.sh prod
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUBTOKEN }}
-  
-      - name: Rollback Prod on failure
-        if: failure()
-        run: |
-          echo "Rolling back Prod"
-          sed -i "s|image: .*|image: $PREV_PROD_IMAGE|" gitops/${{ env.PROD_PATH }}
+
           cd gitops
           git commit -am "Rollback prod"
           git push origin main
