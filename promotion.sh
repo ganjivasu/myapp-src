@@ -1,12 +1,12 @@
 #!/bin/bash
 set -e
 
-git config user.name "ci-bot"
-git config user.email "ci-bot@example.com"
-
 ENV=$1
 
 cd gitops
+
+git config user.name "ci-bot"
+git config user.email "ci-bot@example.com"
 
 git checkout main
 git pull origin main
