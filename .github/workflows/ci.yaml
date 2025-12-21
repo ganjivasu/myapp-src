@@ -143,10 +143,11 @@ jobs:
 
       - name: Promote to Prod
         run: |
-          export IMMUTABLE_IMAGE="${{ needs.build.outputs.immutable_image }}"
+          
           chmod +x promotion.sh
           ./promotion.sh prod
         env:
+          IMMUTABLE_IMAGE: ${{ needs.build.outputs.immutable_image }}
           GITHUB_TOKEN: ${{ secrets.GITHUBTOKEN }}
 
       - name: Rollback Prod on failure
