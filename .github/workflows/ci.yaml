@@ -119,6 +119,13 @@ jobs:
     steps:
       - name: Checkout App repo
         uses: actions/checkout@v4
+
+      - name: Checkout GitOps repo
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.GITOPS_REPO }}
+          token: ${{ secrets.GITHUBTOKEN }}
+          path: gitops
        # with:
         #  repository: ${{ env.GITOPS_REPO }}
          # token: ${{ secrets.GITHUBTOKEN }}
@@ -126,11 +133,11 @@ jobs:
 
       - name: Promote to Prod
         run: |
-          ls -l
+          ls -l gitops
           chmod +x promotion.sh
           ./promotion.sh prod
         env:
-          IMMUTABLE_IMAGE: ${{ needs.build.outputs.immutable_image }}
+          IMMUTABLE_IMAGE: ${{ env.IMMUTABLE_IMAGE }}
           GITHUB_TOKEN: ${{ secrets.GITHUBTOKEN }}
 
       - name: Rollback Prod on failure
