@@ -69,6 +69,11 @@ jobs:
         echo "immutable_image=$IMMUTABLE_IMAGE" >> $GITHUB_OUTPUT
 
       # echo "IMMUTABLE_IMAGE=$IMMUTABLE_IMAGE" >> $GITHUB_ENV
+
+    - name: Set job output
+      id: set_job_output
+      run: echo "immutable_image=${{ steps.build-image.outputs.immutable_image }}" >> $GITHUB_OUTPUT
+        
     # Debug step after build-image
     - name: Debug immutable image
       run: |
@@ -147,7 +152,6 @@ jobs:
 
       - name: Promote to Prod
         run: |
-          
           chmod +x promotion.sh
           ./promotion.sh prod
         env:
