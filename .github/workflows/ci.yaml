@@ -96,7 +96,7 @@ jobs:
     # Promote to PT
     - name: Promote to PT
       run: |
-        IMMUTABLE_IMAGE="${{ steps.build-image.outputs.immutable_image }}"
+        export IMMUTABLE_IMAGE="${{ steps.build-image.outputs.immutable_image }}"
         bash promotion.sh pt
       env:
         GITHUB_SHA: ${{ github.sha }}
