@@ -125,7 +125,10 @@ jobs:
           path: gitops
 
       - name: Promote to Prod
-        run: bash promotion.sh prod
+        run:
+          ls -l
+          chmod +x promotion.sh
+          ./promotion.sh prod
         env:
           IMMUTABLE_IMAGE: ${{ needs.build.outputs.immutable_image }}
           GITHUB_TOKEN: ${{ secrets.GITHUBTOKEN }}
