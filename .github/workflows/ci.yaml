@@ -141,6 +141,3 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUBTOKEN }}
 
-          cd gitops
-          git commit -am "Rollback prod"
-          git push origin main
