@@ -3,6 +3,11 @@ set -e
 
 ENV=$1
 
+if [ -z "$IMMUTABLE_IMAGE" ]; then
+  echo "ERROR: IMMUTABLE_IMAGE is empty"
+  exit 1
+fi
+
 cd gitops
 
 git config user.name "ci-bot"
