@@ -23,7 +23,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     outputs:
-      immutable_image: ${{ steps.build-image.outputs.immutable_image }}
+      immutable_image: ${{ steps.set_job_output.outputs.immutable_image }}
 
     steps:
     #Checkout App repo
