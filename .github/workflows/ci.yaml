@@ -127,30 +127,27 @@ jobs:
     environment:
       name: prod
     steps:
-
       - name: Checkout App repo
         uses: actions/checkout@v3
+  
       - name: Checkout GitOps repo
         uses: actions/checkout@v4
         with:
           repository: ${{ env.GITOPS_REPO }}
           token: ${{ secrets.GITHUBTOKEN }}
           path: gitops
-
-      - name: Debug immutable image in Prod
+  
+      - name: Debug immutable image
         run: echo "IMMUTABLE_IMAGE=${{ needs.build.outputs.immutable_image }}"
-
+  
       - name: Promote to Prod
         run: |
           chmod +x promotion.sh
           ./promotion.sh prod
-        working-directory: ./gitops
         env:
           IMMUTABLE_IMAGE: ${{ needs.build.outputs.immutable_image }}
           GITHUB_TOKEN: ${{ secrets.GITHUBTOKEN }}
-
-
-
+  
       - name: Rollback Prod on failure
         if: failure()
         run: |
