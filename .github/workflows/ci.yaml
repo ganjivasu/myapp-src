@@ -127,6 +127,9 @@ jobs:
     environment:
       name: prod
     steps:
+
+      - name: Checkout App repo
+        uses: actions/checkout@v3
       - name: Checkout GitOps repo
         uses: actions/checkout@v4
         with:
@@ -139,6 +142,7 @@ jobs:
 
       - name: Promote to Prod
         run: |
+          cd gitops
           chmod +x promotion.sh
           ./promotion.sh prod
         env:
