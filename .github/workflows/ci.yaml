@@ -140,12 +140,14 @@ jobs:
       - name: Debug immutable image
         run: echo "IMMUTABLE_IMAGE=${{ needs.build.outputs.immutable_image }}"
   
+      - name: Set IMMUTABLE_IMAGE for script
+        run: echo "IMMUTABLE_IMAGE=${{ needs.build.outputs.immutable_image }}" >> $GITHUB_ENV
+  
       - name: Promote to Prod
         run: |
           chmod +x promotion.sh
           ./promotion.sh prod
         env:
-          IMMUTABLE_IMAGE: ${{ needs.build.outputs.immutable_image }}
           GITHUB_TOKEN: ${{ secrets.GITHUBTOKEN }}
   
       - name: Rollback Prod on failure
