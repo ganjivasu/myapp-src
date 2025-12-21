@@ -69,9 +69,10 @@ jobs:
         echo "immutable_image=$IMMUTABLE_IMAGE" >> $GITHUB_OUTPUT
 
       # echo "IMMUTABLE_IMAGE=$IMMUTABLE_IMAGE" >> $GITHUB_ENV
-    # ✅ Debug step after build-image
+    # Debug step after build-image
     - name: Debug immutable image
-      run: echo "Step output: ${{ steps.build-image.outputs.immutable_image }}"
+      run: |
+        echo "Step output: ${{ steps.build-image.outputs.immutable_image }}"
       
     #Checkout GitOps repo
     - name: Checkout GitOps repo
