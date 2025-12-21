@@ -6,7 +6,7 @@ on:
 
 permissions:
   id-token: write
-  contents: read
+  contents: write
 
 env:
   AWS_REGION: us-east-1
@@ -66,10 +66,10 @@ jobs:
           --query 'imageDetails[0].imageDigest' --output text)
 
         IMMUTABLE_IMAGE=$ECR_REGISTRY/$ECR_REPO@$DIGEST
-        echo "IMMUTABLE_IMAGE=$IMMUTABLE_IMAGE" >> $GITHUB_ENV
-
         echo "immutable_image=$IMMUTABLE_IMAGE" >> $GITHUB_OUTPUT
-        
+
+      #  echo "IMMUTABLE_IMAGE=$IMMUTABLE_IMAGE" >> $GITHUB_ENV
+  
     #Checkout GitOps repo
     - name: Checkout GitOps repo
       uses: actions/checkout@v4
@@ -97,7 +97,6 @@ jobs:
     - name: Promote to PT
       run: bash promotion.sh pt
       env:
-        IMMUTABLE_IMAGE: ${{ env.IMMUTABLE_IMAGE }}
         GITHUB_SHA: ${{ github.sha }}
         GITHUB_TOKEN: ${{ secrets.GITHUBTOKEN }}
 
@@ -105,7 +104,6 @@ jobs:
     - name: Promote to QA
       run: bash promotion.sh qa
       env:
-        IMMUTABLE_IMAGE: ${{ env.IMMUTABLE_IMAGE }}
         GITHUB_SHA: ${{ github.sha }}
         GITHUB_TOKEN: ${{ secrets.GITHUBTOKEN }}
 
