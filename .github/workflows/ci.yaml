@@ -119,10 +119,10 @@ jobs:
     steps:
       - name: Checkout App repo
         uses: actions/checkout@v4
-        with:
-          repository: ${{ env.GITOPS_REPO }}
-          token: ${{ secrets.GITHUBTOKEN }}
-          path: gitops
+       # with:
+        #  repository: ${{ env.GITOPS_REPO }}
+         # token: ${{ secrets.GITHUBTOKEN }}
+          #path: gitops
 
       - name: Promote to Prod
         run: |
