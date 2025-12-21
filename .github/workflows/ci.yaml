@@ -81,7 +81,7 @@ jobs:
     #Update Dev deployment
     - name: Update Dev deployment.yaml
       run: |
-        sed -i "s|image: .*|image: $IMMUTABLE_IMAGE|" gitops/${{ env.DEV_PATH }}
+        sed -i "s|image: .*|image: ${{ steps.build-image.outputs.immutable_image }}|" gitops/${{ env.DEV_PATH }}
 
     #Commit & push Dev
     - name: Commit and push Dev
@@ -96,7 +96,7 @@ jobs:
     # Promote to PT
     - name: Promote to PT
       run: |
-        export IMMUTABLE_IMAGE="${{ steps.build-image.outputs.immutable_image }}"
+        IMMUTABLE_IMAGE="${{ steps.build-image.outputs.immutable_image }}"
         bash promotion.sh pt
       env:
         GITHUB_SHA: ${{ github.sha }}
@@ -106,7 +106,7 @@ jobs:
     - name: Promote to QA
       run: |
         export IMMUTABLE_IMAGE="${{ steps.build-image.outputs.immutable_image }}"
-        bash promotion.sh pt
+        bash promotion.sh qa
       env:
         GITHUB_SHA: ${{ github.sha }}
         GITHUB_TOKEN: ${{ secrets.GITHUBTOKEN }}
@@ -143,7 +143,7 @@ jobs:
 
       - name: Promote to Prod
         run: |
-          export IMMUTABLE_IMAGE="${{ steps.build-image.outputs.immutable_image }}"
+          export IMMUTABLE_IMAGE="${{ needs.build.outputs.immutable_image }}"
           chmod +x promotion.sh
           ./promotion.sh prod
         env:
