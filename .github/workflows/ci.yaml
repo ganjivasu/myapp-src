@@ -142,9 +142,9 @@ jobs:
 
       - name: Promote to Prod
         run: |
-          cd gitops
           chmod +x promotion.sh
           ./promotion.sh prod
+        working-directory: ./gitops
         env:
           IMMUTABLE_IMAGE: ${{ needs.build.outputs.immutable_image }}
           GITHUB_TOKEN: ${{ secrets.GITHUBTOKEN }}
