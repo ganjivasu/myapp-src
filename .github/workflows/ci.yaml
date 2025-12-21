@@ -95,14 +95,18 @@ jobs:
 
     # Promote to PT
     - name: Promote to PT
-      run: bash promotion.sh pt
+      run: |
+        export IMMUTABLE_IMAGE="${{ steps.build-image.outputs.immutable_image }}"
+        bash promotion.sh pt
       env:
         GITHUB_SHA: ${{ github.sha }}
         GITHUB_TOKEN: ${{ secrets.GITHUBTOKEN }}
 
     # Promote to QA
     - name: Promote to QA
-      run: bash promotion.sh qa
+      run: |
+        export IMMUTABLE_IMAGE="${{ steps.build-image.outputs.immutable_image }}"
+        bash promotion.sh pt
       env:
         GITHUB_SHA: ${{ github.sha }}
         GITHUB_TOKEN: ${{ secrets.GITHUBTOKEN }}
@@ -139,11 +143,10 @@ jobs:
 
       - name: Promote to Prod
         run: |
-          ls -l gitops
+          export IMMUTABLE_IMAGE="${{ steps.build-image.outputs.immutable_image }}"
           chmod +x promotion.sh
           ./promotion.sh prod
         env:
-          IMMUTABLE_IMAGE: ${{ needs.build.outputs.immutable_image }}
           GITHUB_TOKEN: ${{ secrets.GITHUBTOKEN }}
 
       - name: Rollback Prod on failure
