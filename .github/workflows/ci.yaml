@@ -51,6 +51,7 @@ jobs:
 
     #Build & push immutable image
     - name: Build and Push Image
+      id: build-image
       run: |
         IMAGE_TAG=${GITHUB_SHA}
         IMAGE=$ECR_REGISTRY/$ECR_REPO:$IMAGE_TAG
@@ -134,6 +135,9 @@ jobs:
         #  repository: ${{ env.GITOPS_REPO }}
          # token: ${{ secrets.GITHUBTOKEN }}
           #path: gitops
+
+      - name: Debug image
+        run: echo "IMAGE=${{ needs.build.outputs.immutable_image }}"
 
       - name: Promote to Prod
         run: |
