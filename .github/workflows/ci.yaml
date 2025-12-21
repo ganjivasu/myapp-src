@@ -22,6 +22,8 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      immutable_image: ${{ steps.build-image.outputs.immutable_image }}
 
     steps:
     #Checkout App repo
@@ -65,6 +67,8 @@ jobs:
         IMMUTABLE_IMAGE=$ECR_REGISTRY/$ECR_REPO@$DIGEST
         echo "IMMUTABLE_IMAGE=$IMMUTABLE_IMAGE" >> $GITHUB_ENV
 
+        echo "immutable_image=$IMMUTABLE_IMAGE" >> $GITHUB_OUTPUT
+        
     #Checkout GitOps repo
     - name: Checkout GitOps repo
       uses: actions/checkout@v4
@@ -137,7 +141,7 @@ jobs:
           chmod +x promotion.sh
           ./promotion.sh prod
         env:
-          IMMUTABLE_IMAGE: ${{ env.IMMUTABLE_IMAGE }}
+          IMMUTABLE_IMAGE: ${{ needs.build.outputs.immutable_image }}
           GITHUB_TOKEN: ${{ secrets.GITHUBTOKEN }}
 
       - name: Rollback Prod on failure
