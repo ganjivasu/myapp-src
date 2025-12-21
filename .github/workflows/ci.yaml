@@ -142,12 +142,13 @@ jobs:
 
       - name: Promote to Prod
         run: |
-          chmod +x promotion.sh
-          ./promotion.sh prod
-        working-directory: ./gitops
+          cd gitops
+          chmod +x ../promotion.sh
+          ../promotion.sh prod
         env:
           IMMUTABLE_IMAGE: ${{ needs.build.outputs.immutable_image }}
           GITHUB_TOKEN: ${{ secrets.GITHUBTOKEN }}
+
 
       - name: Rollback Prod on failure
         if: failure()
