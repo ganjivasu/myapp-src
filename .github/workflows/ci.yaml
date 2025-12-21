@@ -117,7 +117,7 @@ jobs:
     environment:
       name: prod   # ✅ Approval, secrets, audit
     steps:
-      - name: Checkout GitOps repo
+      - name: Checkout App repo
         uses: actions/checkout@v4
         with:
           repository: ${{ env.GITOPS_REPO }}
@@ -125,7 +125,7 @@ jobs:
           path: gitops
 
       - name: Promote to Prod
-        run:
+        run: |
           ls -l
           chmod +x promotion.sh
           ./promotion.sh prod
