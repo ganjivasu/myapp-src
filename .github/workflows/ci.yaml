@@ -128,7 +128,7 @@ jobs:
           path: gitops
   
       - name: Debug build output
-        run: 
+        run: |
           echo "Build immutable image: ${{ needs.build.outputs.immutable_image }}"
   
       - name: Set IMMUTABLE_IMAGE env
