@@ -18,7 +18,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     outputs:
-      immutable_image: ${{ steps.build-image.outputs.immutable_image }}
+      immutable_image: ${{ steps.image.outputs.immutable_image }}
 
     steps:
       - uses: actions/checkout@v3
@@ -32,19 +32,26 @@ jobs:
         run: aws ecr get-login-password | docker login --username AWS --password-stdin $ECR_REGISTRY
 
       - name: Build & Push Image
-        id: build-image
+        id: image   # 🚨 THIS ID NAME MATTERS
         run: |
-          IMAGE=$ECR_REGISTRY/$ECR_REPO:$GITHUB_SHA
-          docker build -t $IMAGE .
-          docker push $IMAGE
+          IMAGE="$ECR_REGISTRY/$ECR_REPO:$GITHUB_SHA"
+          docker build -t "$IMAGE" .
+          docker push "$IMAGE"
 
           DIGEST=$(aws ecr describe-images \
-            --repository-name $ECR_REPO \
-            --image-ids imageTag=$GITHUB_SHA \
-            --query 'imageDetails[0].imageDigest' --output text)
+            --repository-name "$ECR_REPO" \
+            --image-ids imageTag="$GITHUB_SHA" \
+            --query 'imageDetails[0].imageDigest' \
+            --output text)
 
-          IMMUTABLE_IMAGE=$ECR_REGISTRY/$ECR_REPO@$DIGEST
-          echo "immutable_image=$IMMUTABLE_IMAGE" >> $GITHUB_OUTPUT
+          IMMUTABLE_IMAGE="$ECR_REGISTRY/$ECR_REPO@$DIGEST"
+
+          echo "immutable_image=$IMMUTABLE_IMAGE" >> "$GITHUB_OUTPUT"
+
+      - name: DEBUG build output
+        run: |
+          echo "STEP OUTPUT: ${{ steps.image.outputs.immutable_image }}"
+
 
       - name: Checkout GitOps repo
         uses: actions/checkout@v4
@@ -78,6 +85,10 @@ jobs:
           token: ${{ secrets.GITHUBTOKEN }}
           path: gitops
 
+      - name: DEBUG job output
+        run: |
+          echo "JOB OUTPUT: ${{ needs.build.outputs.immutable_image }}"
+
       - name: Promote to Prod
         run: |
           chmod +x promotion.sh
@@ -85,3 +96,4 @@ jobs:
           ./promotion.sh prod
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUBTOKEN }}
+
