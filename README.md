@@ -159,5 +159,5 @@ kubectl apply -n argo-rollouts \
 kubectl get pods -n argo-rollouts
 
 #Delete Cluster
-eksctl delete cluster --name myapp-cluster --region us-east-1
+eksctl delete cluster --name myapp-cluster --region us-east-1 --wait
 
