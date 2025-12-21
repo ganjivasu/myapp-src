@@ -139,7 +139,7 @@ jobs:
           #path: gitops
 
       - name: Debug image
-        run: echo "IMAGE=${{ needs.build.outputs.immutable_image }}"
+        run: echo "IMMUTABLE_IMAGE=${{ needs.build.outputs.immutable_image }}"
 
       - name: Promote to Prod
         run: |
