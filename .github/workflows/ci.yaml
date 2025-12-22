@@ -71,31 +71,31 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUBTOKEN }}
 
-  deploy-prod:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: prod
+deploy-prod:
+  needs: build
+  if: github.ref == 'refs/heads/main'
+  runs-on: ubuntu-latest
+  environment:
+    name: prod
 
-    steps:
-      - uses: actions/checkout@v3
+  steps:
+    - name: Checkout App repo
+      uses: actions/checkout@v3
 
-      - uses: actions/checkout@v4
-        with:
-          repository: ${{ env.GITOPS_REPO }}
-          token: ${{ secrets.GITHUBTOKEN }}
-          path: gitops
+    - name: Checkout GitOps repo
+      uses: actions/checkout@v4
+      with:
+        repository: ${{ env.GITOPS_REPO }}
+        token: ${{ secrets.GITHUBTOKEN }}
+        path: gitops
 
-      - name: DEBUG job output
-        run: |
-          echo "JOB OUTPUT: ${{ needs.build.outputs.immutable_image }}"
+    - name: Promote to Prod
+      run: |
+        chmod +x promotion.sh
+        export IMMUTABLE_IMAGE="${{ needs.build.outputs.immutable_image }}"
+        echo "USING IMAGE = $IMMUTABLE_IMAGE"
+        ./promotion.sh prod
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUBTOKEN }}
 
-      - name: Promote to Prod
-        run: |
-          echo "USING IMAGE = $IMMUTABLE_IMAGE"
-          chmod +x promotion.sh
-          export IMMUTABLE_IMAGE="${{ needs.build.outputs.immutable_image }}"
-          ./promotion.sh prod
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUBTOKEN }}
 
