@@ -28,6 +28,9 @@ echo "========================================="
 
 cd "$GITOPS_DIR"
 
+git config user.name "ci-bot"
+git config user.email "ci-bot@example.com"
+
 git checkout main
 git pull origin main
 
