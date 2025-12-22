@@ -31,7 +31,7 @@ cd "$GITOPS_DIR"
 git checkout main
 git pull origin main
 
-DEPLOY_FILE="apps/myapp/$ENV/deployment.yaml"
+DEPLOY_FILE="myapp/$ENV/deployment.yaml"
 
 sed -i.bak -E "s|image: .*|image: $IMAGE|" "$DEPLOY_FILE"
 rm -f "$DEPLOY_FILE.bak"
