@@ -32,7 +32,7 @@ jobs:
         run: aws ecr get-login-password | docker login --username AWS --password-stdin $ECR_REGISTRY
 
       - name: Build & Push Image
-        id: image   # 🚨 THIS ID NAME MATTERS
+        id: image
         run: |
           IMAGE="$ECR_REGISTRY/$ECR_REPO:$GITHUB_SHA"
           docker build -t "$IMAGE" .
@@ -46,7 +46,8 @@ jobs:
 
           IMMUTABLE_IMAGE="$ECR_REGISTRY/$ECR_REPO@$DIGEST"
 
-          echo "immutable_image=$IMMUTABLE_IMAGE" >> "$GITHUB_OUTPUT"
+          echo "IMMUTABLE_IMAGE=$IMMUTABLE_IMAGE" >> $GITHUB_ENV
+
 
       - name: DEBUG build output
         run: |
@@ -61,40 +62,43 @@ jobs:
           path: gitops
 
       - name: Promote environments
-        env:
-          IMMUTABLE_IMAGE: ${{ steps.image.outputs.immutable_image }}
-          GITHUB_TOKEN: ${{ secrets.GITHUBTOKEN }}
         run: |
-          chmod +x promotion.sh
           echo "USING IMAGE = $IMMUTABLE_IMAGE"
-          ./promotion.sh dev "${{ steps.image.outputs.immutable_image }}"
-          ./promotion.sh pt  "${{ steps.image.outputs.immutable_image }}"
-          ./promotion.sh qa  "${{ steps.image.outputs.immutable_image }}"
+          chmod +x promotion.sh
+          ./promotion.sh dev "$IMMUTABLE_IMAGE"
+          ./promotion.sh pt  "$IMMUTABLE_IMAGE"
+          ./promotion.sh qa  "$IMMUTABLE_IMAGE"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUBTOKEN }}
+
 
   deploy-prod:
     needs: build
-    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment:
       name: prod
 
     steps:
-      - name: Checkout App repo
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-      - name: Checkout GitOps repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           repository: ${{ env.GITOPS_REPO }}
           token: ${{ secrets.GITHUBTOKEN }}
           path: gitops
 
+      - name: Restore image
+        run: |
+          echo "IMMUTABLE_IMAGE=${{ env.IMMUTABLE_IMAGE }}" >> $GITHUB_ENV
+
       - name: Promote to Prod
         run: |
+          echo "USING IMAGE = $IMMUTABLE_IMAGE"
           chmod +x promotion.sh
-          ./promotion.sh prod "${{ needs.build.outputs.immutable_image }}"
+          ./promotion.sh prod "$IMMUTABLE_IMAGE"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUBTOKEN }}
+
 
 
 
