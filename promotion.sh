@@ -1,7 +1,7 @@
 #!/bin/bash
-set -euo pipefail
+set -e
 
-ENVIRONMENT="$1"
+ENV="$1"
 IMAGE="$2"
 
 if [[ -z "$IMAGE" ]]; then
@@ -10,7 +10,7 @@ if [[ -z "$IMAGE" ]]; then
 fi
 
 echo "========================================="
-echo "Promoting image to environment: $ENVIRONMENT"
+echo "Promoting image to environment: $ENV"
 echo "Image: $IMAGE"
 echo "========================================="
 
@@ -22,15 +22,12 @@ git config user.email "ci-bot@example.com"
 git checkout main
 git pull origin main
 
-FILE="myapp/$ENVIRONMENT/deployment.yaml"
+FILE="myapp/$ENV/deployment.yaml"
 
 sed -i "s|image: .*|image: $IMAGE|" "$FILE"
 
-echo "Verifying change:"
 grep "image:" "$FILE"
 
 git add "$FILE"
-git commit -m "Promote $IMAGE to $ENVIRONMENT" || echo "No changes"
+git commit -m "Promote $IMAGE to $ENV" || echo "No changes"
 git push origin main
-
-echo "Promotion to $ENVIRONMENT completed successfully"

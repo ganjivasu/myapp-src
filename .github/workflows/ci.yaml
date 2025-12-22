@@ -32,26 +32,31 @@ jobs:
         run: aws ecr get-login-password | docker login --username AWS --password-stdin $ECR_REGISTRY
 
       - name: Build & Push Image
-        id: image
         run: |
           IMAGE="$ECR_REGISTRY/$ECR_REPO:$GITHUB_SHA"
           docker build -t "$IMAGE" .
           docker push "$IMAGE"
-
+      
           DIGEST=$(aws ecr describe-images \
             --repository-name "$ECR_REPO" \
             --image-ids imageTag="$GITHUB_SHA" \
             --query 'imageDetails[0].imageDigest' \
             --output text)
-
+      
           IMMUTABLE_IMAGE="$ECR_REGISTRY/$ECR_REPO@$DIGEST"
+      
+          echo "$IMMUTABLE_IMAGE" > immutable_image.txt
 
-          echo "IMMUTABLE_IMAGE=$IMMUTABLE_IMAGE" >> $GITHUB_ENV
+      - name: Upload immutable image
+        uses: actions/upload-artifact@v4
+        with:
+          name: immutable-image
+          path: immutable_image.txt
 
 
-      - name: DEBUG build output
-        run: |
-          echo "STEP OUTPUT: ${{ steps.image.outputs.immutable_image }}"
+      #- name: DEBUG build output
+       # run: |
+        #  echo "STEP OUTPUT: ${{ steps.image.outputs.immutable_image }}"
 
 
       - name: Checkout GitOps repo
@@ -63,13 +68,14 @@ jobs:
 
       - name: Promote environments
         run: |
-          echo "USING IMAGE = $IMMUTABLE_IMAGE"
+          IMAGE=$(cat immutable_image.txt)
           chmod +x promotion.sh
-          ./promotion.sh dev "$IMMUTABLE_IMAGE"
-          ./promotion.sh pt  "$IMMUTABLE_IMAGE"
-          ./promotion.sh qa  "$IMMUTABLE_IMAGE"
+          ./promotion.sh dev "$IMAGE"
+          ./promotion.sh pt  "$IMAGE"
+          ./promotion.sh qa  "$IMAGE"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUBTOKEN }}
+
 
 
   deploy-prod:
@@ -77,27 +83,30 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: prod
-
+  
     steps:
       - uses: actions/checkout@v3
-
+  
       - uses: actions/checkout@v4
         with:
           repository: ${{ env.GITOPS_REPO }}
           token: ${{ secrets.GITHUBTOKEN }}
           path: gitops
-
-      - name: Restore image
-        run: |
-          echo "IMMUTABLE_IMAGE=${{ env.IMMUTABLE_IMAGE }}" >> $GITHUB_ENV
-
+  
+      - name: Download immutable image
+        uses: actions/download-artifact@v4
+        with:
+          name: immutable-image
+  
       - name: Promote to Prod
         run: |
-          echo "USING IMAGE = $IMMUTABLE_IMAGE"
+          IMAGE=$(cat immutable_image.txt)
+          echo "USING IMAGE = $IMAGE"
           chmod +x promotion.sh
-          ./promotion.sh prod "$IMMUTABLE_IMAGE"
+          ./promotion.sh prod "$IMAGE"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUBTOKEN }}
+
 
 
 
