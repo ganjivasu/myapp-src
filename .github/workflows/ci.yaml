@@ -61,15 +61,15 @@ jobs:
           path: gitops
 
       - name: Promote environments
+        env:
+          IMMUTABLE_IMAGE: ${{ steps.image.outputs.immutable_image }}
+          GITHUB_TOKEN: ${{ secrets.GITHUBTOKEN }}
         run: |
-          echo "USING IMAGE = $IMMUTABLE_IMAGE"
           chmod +x promotion.sh
-          export IMMUTABLE_IMAGE="${{ steps.image.outputs.immutable_image }}"
+          echo "USING IMAGE = $IMMUTABLE_IMAGE"
           ./promotion.sh dev
           ./promotion.sh pt
           ./promotion.sh qa
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUBTOKEN }}
 
   deploy-prod:
     needs: build
@@ -90,12 +90,13 @@ jobs:
           path: gitops
 
       - name: Promote to Prod
+        env:
+          IMMUTABLE_IMAGE: ${{ needs.build.outputs.immutable_image }}
+          GITHUB_TOKEN: ${{ secrets.GITHUBTOKEN }}
         run: |
           chmod +x promotion.sh
-          export IMMUTABLE_IMAGE="${{ needs.build.outputs.immutable_image }}"
           echo "USING IMAGE = $IMMUTABLE_IMAGE"
           ./promotion.sh prod
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUBTOKEN }}
+
 
 
