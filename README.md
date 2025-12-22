@@ -164,3 +164,21 @@ eksctl delete cluster --name myapp-cluster --region us-east-1 --wait
 
 #Check node CIDR allocation
 kubectl get nodes -o json | jq '.items[].spec.podCIDR'
+
+
+Build
+ └── Immutable Image
+      └── Promotion Artifact
+           ├── Metadata
+           ├── Checksum
+           └── Audit Trail
+                ↓
+        GitOps Repo Update
+                ↓
+        ArgoCD Sync
+                ↓
+        Canary Rollout
+                ↓
+        Auto Analysis
+                ↓
+        Promote OR Rollback

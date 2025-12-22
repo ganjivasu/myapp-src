@@ -15,100 +15,105 @@ env:
   GITOPS_REPO: ganjivasu/myapp-gitops
 
 jobs:
+# -------------------------------------------------
+# 1️⃣ BUILD + PROMOTE NON-PROD
+# -------------------------------------------------
   build:
     runs-on: ubuntu-latest
-    outputs:
-      immutable_image: ${{ steps.image.outputs.immutable_image }}
 
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout App Repo
+        uses: actions/checkout@v4
 
-      - uses: aws-actions/configure-aws-credentials@v2
+      - name: Configure AWS
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::281762848319:role/github-actions-ecr-role
           aws-region: us-east-1
 
       - name: Login to ECR
-        run: aws ecr get-login-password | docker login --username AWS --password-stdin $ECR_REGISTRY
+        run: |
+          aws ecr get-login-password \
+          | docker login --username AWS --password-stdin $ECR_REGISTRY
 
       - name: Build & Push Image
         run: |
           IMAGE="$ECR_REGISTRY/$ECR_REPO:$GITHUB_SHA"
           docker build -t "$IMAGE" .
           docker push "$IMAGE"
-      
+
           DIGEST=$(aws ecr describe-images \
             --repository-name "$ECR_REPO" \
             --image-ids imageTag="$GITHUB_SHA" \
             --query 'imageDetails[0].imageDigest' \
             --output text)
-      
+
           IMMUTABLE_IMAGE="$ECR_REGISTRY/$ECR_REPO@$DIGEST"
-      
           echo "$IMMUTABLE_IMAGE" > immutable_image.txt
 
-      - name: Upload immutable image
+          cat <<EOF > promotion_metadata.json
+          {
+            "image": "$IMMUTABLE_IMAGE",
+            "git_sha": "${GITHUB_SHA}",
+            "run_id": "${GITHUB_RUN_ID}",
+            "repository": "${GITHUB_REPOSITORY}",
+            "built_at": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
+            "actor": "${GITHUB_ACTOR}"
+          }
+          EOF
+
+      - name: Upload Promotion Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: immutable-image
-          path: immutable_image.txt
+          name: promotion-artifacts
+          path: |
+            immutable_image.txt
+            promotion_metadata.json
 
-
-      #- name: DEBUG build output
-       # run: |
-        #  echo "STEP OUTPUT: ${{ steps.image.outputs.immutable_image }}"
-
-
-      - name: Checkout GitOps repo
+      - name: Checkout GitOps Repo
         uses: actions/checkout@v4
         with:
           repository: ${{ env.GITOPS_REPO }}
           token: ${{ secrets.GITHUBTOKEN }}
           path: gitops
 
-      - name: Promote environments
+      - name: Promote Dev / PT / QA
         run: |
-          IMAGE=$(cat immutable_image.txt)
           chmod +x promotion.sh
-          ./promotion.sh dev "$IMAGE"
-          ./promotion.sh pt  "$IMAGE"
-          ./promotion.sh qa  "$IMAGE"
+          ./promotion.sh dev
+          ./promotion.sh pt
+          ./promotion.sh qa
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUBTOKEN }}
 
-
-
+# -------------------------------------------------
+# 2️⃣ PROD PROMOTION (Approval-Gated)
+# -------------------------------------------------
   deploy-prod:
     needs: build
     runs-on: ubuntu-latest
     environment:
       name: prod
-  
+
     steps:
-      - uses: actions/checkout@v3
-  
-      - uses: actions/checkout@v4
+      - name: Checkout App Repo
+        uses: actions/checkout@v4
+
+      - name: Download Promotion Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: promotion-artifacts
+
+      - name: Checkout GitOps Repo
+        uses: actions/checkout@v4
         with:
           repository: ${{ env.GITOPS_REPO }}
           token: ${{ secrets.GITHUBTOKEN }}
           path: gitops
-  
-      - name: Download immutable image
-        uses: actions/download-artifact@v4
-        with:
-          name: immutable-image
-  
+
       - name: Promote to Prod
         run: |
-          IMAGE=$(cat immutable_image.txt)
-          echo "USING IMAGE = $IMAGE"
           chmod +x promotion.sh
-          ./promotion.sh prod "$IMAGE"
+          ./promotion.sh prod
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUBTOKEN }}
-
-
-
-
-
-
