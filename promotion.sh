@@ -12,6 +12,9 @@ fi
 NAME=$(echo "$IMAGE" | cut -d@ -f1)
 DIGEST=$(echo "$IMAGE" | cut -d@ -f2 | sed 's/sha256:/sha256-/')
 
+git config user.name "ci-bot"
+git config user.email "ci-bot@example.com"
+
 cd gitops/myapp/overlays/$ENV
 
 yq -i "
