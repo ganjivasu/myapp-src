@@ -182,3 +182,72 @@ Build
         Auto Analysis
                 ↓
         Promote OR Rollback
+
+
+
+
+🔍 How to check this LIVE on your cluster
+1️⃣ Check max pods on node
+kubectl describe node <node-name> | grep -i pods
+
+2️⃣ Check instance type
+kubectl get nodes -o wide
+
+🔧 How to enable Prefix Delegation
+kubectl set env daemonset aws-node \
+  -n kube-system \
+  ENABLE_PREFIX_DELEGATION=true \
+  WARM_PREFIX_TARGET=1
+
+
+Verify:
+
+kubectl describe node <node> | grep -i prefix
+
+#Prometheus installation
+kubectl config current-context
+
+#Add Helm Repo
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+
+#install prometheus
+helm install prometheus prometheus-community/kube-prometheus-stack -n monitoring --create-namespace
+
+#Run this before enabling canary metrics:
+kubectl port-forward svc/prometheus -n monitoring 9090
+
+#Then open:
+http://localhost:9090
+
+
+#Run:
+http_requests_total
+
+#verify installation
+kubectl get pods -n monitoring
+
+
+You should see:
+
+prometheus-kube-prometheus-stack-prometheus-0
+prometheus-kube-prometheus-stack-grafana
+prometheus-kube-prometheus-stack-operator
+
+#verify exact service name
+kubectl get svc -n monitoring
+
+#show all resources under overlays/dev-pt-qa-prod
+kubectl kustomize myapp/overlays/prod | grep -E "kind: (Rollout|Service|AnalysisTemplate)"
+
+
+🧪 How to verify the service name yourself
+
+Run this:
+
+kubectl get svc -n monitoring | grep prometheus
+
+
+You’ll see something like:
+
+prometheus-kube-prometheus-stack-prometheus   ClusterIP   ...

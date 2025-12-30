@@ -2,43 +2,23 @@
 set -euo pipefail
 
 ENV=$1
-GITOPS_DIR="$(pwd)/gitops"
-
-if [[ ! "$ENV" =~ ^(dev|pt|qa|prod)$ ]]; then
-  echo "ERROR: Invalid environment $ENV"
-  exit 1
-fi
-
-if [[ ! -f immutable_image.txt ]]; then
-  echo "ERROR: immutable_image.txt not found"
-  exit 1
-fi
-
 IMAGE=$(cat immutable_image.txt)
 
-if [[ -z "$IMAGE" ]]; then
-  echo "ERROR: Image is empty"
+if [[ -z "$ENV" || -z "$IMAGE" ]]; then
+  echo "Usage: promotion.sh <env>"
   exit 1
 fi
 
-echo "========================================="
-echo "Promoting image to environment: $ENV"
-echo "Image: $IMAGE"
-echo "========================================="
+NAME=$(echo "$IMAGE" | cut -d@ -f1)
+DIGEST=$(echo "$IMAGE" | cut -d@ -f2 | sed 's/sha256:/sha256-/')
 
-cd "$GITOPS_DIR"
+cd gitops/apps/myapp/overlays/$ENV
 
-git config user.name "ci-bot"
-git config user.email "ci-bot@example.com"
+yq -i "
+.images[0].newName = \"$NAME\" |
+.images[0].newTag  = \"$DIGEST\"
+" kustomization.yaml
 
-git checkout main
-git pull origin main
-
-DEPLOY_FILE="myapp/$ENV/deployment.yaml"
-
-sed -i.bak -E "s|image: .*|image: $IMAGE|" "$DEPLOY_FILE"
-rm -f "$DEPLOY_FILE.bak"
-
-git add "$DEPLOY_FILE"
+git add kustomization.yaml
 git commit -m "Promote $IMAGE to $ENV"
 git push origin main
