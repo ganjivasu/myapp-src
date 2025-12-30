@@ -12,7 +12,7 @@ fi
 NAME=$(echo "$IMAGE" | cut -d@ -f1)
 DIGEST=$(echo "$IMAGE" | cut -d@ -f2 | sed 's/sha256:/sha256-/')
 
-cd gitops/apps/myapp/overlays/$ENV
+cd gitops/myapp/overlays/$ENV
 
 yq -i "
 .images[0].newName = \"$NAME\" |
