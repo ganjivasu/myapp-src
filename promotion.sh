@@ -10,7 +10,7 @@ if [[ -z "$ENV" || -z "$IMAGE" ]]; then
 fi
 
 NAME=$(echo "$IMAGE" | cut -d@ -f1)
-DIGEST=$(echo "$IMAGE" | cut -d@ -f2 | sed 's/sha256:/sha256-/')
+DIGEST=$(echo "$IMAGE" | cut -d@ -f2)
 
 cd gitops/myapp/overlays/$ENV
 
@@ -23,5 +23,5 @@ yq -i "
 " kustomization.yaml
 
 git add kustomization.yaml
-git commit -m "Promote $IMAGE to $ENV"
+git commit -m \"Promote $IMAGE to $ENV\"
 git push origin main
