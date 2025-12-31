@@ -19,7 +19,7 @@ git config user.email "ci-bot@example.com"
 
 yq -i "
 .images[0].newName = \"$NAME\" |
-.images[0].newTag  = \"$DIGEST\"
+.images[0].digest  = \"$DIGEST\"
 " kustomization.yaml
 
 git add kustomization.yaml
