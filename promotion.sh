@@ -23,5 +23,5 @@ yq -i "
 " kustomization.yaml
 
 git add kustomization.yaml
-git commit -m \"Promote $IMAGE to $ENV\"
+git commit -m "Promote $IMAGE to $ENV"
 git push origin main
