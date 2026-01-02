@@ -22,6 +22,9 @@ yq -i "
 .images[0].digest  = \"$DIGEST\"
 " kustomization.yaml
 
+kubectl kustomize . > /tmp/rendered.yaml
+kubectl apply --dry-run=server -f /tmp/rendered.yaml
+
 git add kustomization.yaml
 git commit -m "Promote $IMAGE to $ENV"
 git push origin main

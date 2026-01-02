@@ -253,9 +253,90 @@ You’ll see something like:
 
 prometheus-kube-prometheus-prometheus   ClusterIP   ...
 
+#Confirm prod rollout is healthy
+kubectl get rollout myapp -n prod
+kubectl get pods -n prod
+kubectl get analysisrun -n prod
 
 
+Expected:
 
+Rollout phase: Healthy
+Pods: Running
+AnalysisRun: Successful
+
+
+#Verify traffic shifting actually works
+kubectl argo rollouts get rollout myapp -n prod
+
+#You should see:
+
+Step-by-step weight progression (10 → 30 → 60 → 100)
+
+Analysis runs at each step
+
+# If you don’t have the plugin:
+
+brew install argoproj/tap/kubectl-argo-rollouts
+
+
+#Then promote manually:
+kubectl argo rollouts promote myapp -n prod
+
+#Promote rollback:
+kubectl argo rollouts abort myapp -n prod
+kubectl argo rollouts undo myapp -n prod
+
+
+#Add this annotation to Rollout:
+
+metadata:
+  annotations:
+    rollouts.argoproj.io/managed-by: argocd
+
+
+#Then open:
+kubectl argo rollouts dashboard
+
+
+#You’ll see:
+Canary steps
+Metrics graph
+Live promotion buttons
+
+
+#Final validation checklist (run in order)
+kubectl kustomize overlays/prod | grep image:
+kubectl apply -n prod --dry-run=server -f <(kubectl kustomize overlays/prod)
+kubectl argo rollouts get rollout myapp -n prod
+kubectl get analysisrun -n prod
+
+
+#Validation (run once per env)
+kubectl kustomize overlays/dev | grep AnalysisTemplate
+kubectl kustomize overlays/qa | grep AnalysisTemplate
+kubectl get analysistemplate -A
+
+
+#install k6 operator
+kubectl create namespace k6
+kubectl apply -f https://github.com/grafana/k6-operator/releases/latest/download/k6-operator.yaml
+
+#verify
+kubectl get pods -n k6
+
+
+#Validation commands
+kubectl get k6 -A
+kubectl get pods -n k6
+kubectl get analysisrun -n prod
+kubectl describe analysisrun -n prod
+
+
+#Grafana:
+
+k6_http_req_failed
+k6_http_req_duration
 
 NAME: prometheus
 LAST DEPLOYED: Thu Jan  1 23:19:26 2026
