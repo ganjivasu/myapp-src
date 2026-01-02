@@ -215,7 +215,12 @@ helm repo update
 helm install prometheus prometheus-community/kube-prometheus-stack -n monitoring --create-namespace
 
 #Run this before enabling canary metrics:
-kubectl port-forward svc/prometheus -n monitoring 9090
+
+kubectl port-forward \
+  svc/prometheus-kube-prometheus-stack-prometheus \
+  -n monitoring \
+  9090:9090
+
 
 #Then open:
 http://localhost:9090
