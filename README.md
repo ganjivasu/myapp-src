@@ -158,10 +158,6 @@ kubectl apply -n argo-rollouts \
 #verify
 kubectl get pods -n argo-rollouts
 
-#Delete Cluster
-eksctl delete cluster --name myapp-cluster --region us-east-1 --wait
-
-
 #Check node CIDR allocation
 kubectl get nodes -o json | jq '.items[].spec.podCIDR'
 
@@ -217,7 +213,7 @@ helm install prometheus prometheus-community/kube-prometheus-stack -n monitoring
 #Run this before enabling canary metrics:
 
 kubectl port-forward \
-  svc/prometheus-kube-prometheus-stack-prometheus \
+  svc/prometheus-kube-prometheus-prometheus \
   -n monitoring \
   9090:9090
 
@@ -255,4 +251,37 @@ kubectl get svc -n monitoring | grep prometheus
 
 You’ll see something like:
 
-prometheus-kube-prometheus-stack-prometheus   ClusterIP   ...
+prometheus-kube-prometheus-prometheus   ClusterIP   ...
+
+
+
+
+
+NAME: prometheus
+LAST DEPLOYED: Thu Jan  1 23:19:26 2026
+NAMESPACE: monitoring
+STATUS: deployed
+REVISION: 1
+NOTES:
+kube-prometheus-stack has been installed. Check its status by running:
+  kubectl --namespace monitoring get pods -l "release=prometheus"
+
+Get Grafana 'admin' user password by running:
+
+  kubectl --namespace monitoring get secrets prometheus-grafana -o jsonpath="{.data.admin-password}" | base64 -d ; echo
+
+Access Grafana local instance:
+
+  export POD_NAME=$(kubectl --namespace monitoring get pod -l "app.kubernetes.io/name=grafana,app.kubernetes.io/instance=prometheus" -oname)
+  kubectl --namespace monitoring port-forward $POD_NAME 3000
+
+Get your grafana admin user password by running:
+
+  kubectl get secret --namespace monitoring -l app.kubernetes.io/component=admin-secret -o jsonpath="{.items[0].data.admin-password}" | base64 --decode ; echo
+
+
+Visit https://github.com/prometheus-operator/kube-prometheus for instructions on how to create & configure Alertmanager and Prometheus instances using the Operator.
+
+
+#Delete Cluster
+eksctl delete cluster --name myapp-cluster --region us-east-1 --wait
