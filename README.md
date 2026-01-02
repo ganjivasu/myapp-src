@@ -326,17 +326,18 @@ kubectl apply -f https://github.com/grafana/k6-operator/releases/latest/download
 kubectl get pods -n k6
 
 
-#Validation commands
-kubectl get k6 -A
-kubectl get pods -n k6
+#Final verification checklist (DO THESE)
+kubectl get analysistemplates -n prod
 kubectl get analysisrun -n prod
 kubectl describe analysisrun -n prod
+kubectl get k6 -A
 
 
-#Grafana:
+#Grafana queries:
 
 k6_http_req_failed
 k6_http_req_duration
+http_requests_total
 
 NAME: prometheus
 LAST DEPLOYED: Thu Jan  1 23:19:26 2026
