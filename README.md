@@ -364,6 +364,18 @@ Get your grafana admin user password by running:
 
 Visit https://github.com/prometheus-operator/kube-prometheus for instructions on how to create & configure Alertmanager and Prometheus instances using the Operator.
 
+#How to Run k6 During Canary
+kubectl apply -f manifests/configmap.yaml
+kubectl apply -f manifests/testrun.yaml
+
+
+kubectl apply -f configmap-k6-test.yaml
+kubectl apply -f testrun.yaml
+
+kubectl get testruns -n k6
+kubectl logs -n k6 -l app=k6
+
+
 
 #Delete Cluster
 eksctl delete cluster --name myapp-cluster --region us-east-1 --wait
