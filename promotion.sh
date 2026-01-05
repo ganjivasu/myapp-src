@@ -23,7 +23,7 @@ yq -i "
 " kustomization.yaml
 
 kubectl kustomize . > /tmp/rendered.yaml
-kubectl apply --dry-run=server -f /tmp/rendered.yaml
+kubectl apply --dry-run=client --validate=true -f /tmp/rendered.yaml
 
 git add kustomization.yaml
 git commit -m "Promote $IMAGE to $ENV"
