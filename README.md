@@ -375,6 +375,24 @@ kubectl apply -f testrun.yaml
 kubectl get testruns -n k6
 kubectl logs -n k6 -l app=k6
 
+Create Slack webhook secret
+kubectl -n argocd create secret generic slack-webhook \
+  --from-literal=webhook-url=https://hooks.slack.com/services/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
+
+
+#Grafana dashboard configmap apply command
+kubectl apply -f monitoring/grafana-myapp-canary.yaml
+
+#Apply argocd root app 
+kubectl apply -f argocd/root-app.yaml
+
+
+1️⃣ Install LitmusChaos (one-time)
+kubectl apply -f https://litmuschaos.github.io/litmus/litmus-operator.yaml
+
+Verify:
+kubectl get pods -n litmus
+
 
 
 #Delete Cluster

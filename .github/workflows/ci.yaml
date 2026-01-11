@@ -61,6 +61,15 @@ jobs:
             "actor": "${GITHUB_ACTOR}"
           }
           EOF
+            
+      # k6 Canary / Smoke Test Gate
+      # ---------------------------------
+      - name: Run k6 Canary Test
+        uses: grafana/k6-action@v0.3.0
+        with:
+          filename: https://raw.githubusercontent.com/ganjivasu/myapp-k6/main/scripts/health-canary.js
+        env:
+          BASE_URL: http://myapp-dev.default.svc.cluster.local:9000
 
       - name: Upload Promotion Artifacts
         uses: actions/upload-artifact@v4
