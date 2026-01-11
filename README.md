@@ -375,10 +375,8 @@ kubectl apply -f testrun.yaml
 kubectl get testruns -n k6
 kubectl logs -n k6 -l app=k6
 
-Create Slack webhook secret
-kubectl -n argocd create secret generic slack-webhook \
-  --from-literal=webhook-url=https://hooks.slack.com/services/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
-
+#Create Slack webhook secret
+it is in the notepad - copy it and run
 
 #Grafana dashboard configmap apply command
 kubectl apply -f monitoring/grafana-myapp-canary.yaml
