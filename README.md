@@ -463,5 +463,6 @@ kubectl get pods -n argocd | grep notifications
 
 kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj-labs/argocd-notifications/stable/manifests/install.yaml
 
+
 #Delete Cluster
 eksctl delete cluster --name myapp-cluster --region us-east-1 --wait
