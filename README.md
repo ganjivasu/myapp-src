@@ -105,6 +105,7 @@ spec:
     - CreateNamespace=true
 
 
+
 **apply**
 
 kubectl apply -f myapp-dev.yaml
