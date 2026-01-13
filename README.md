@@ -320,7 +320,7 @@ kubectl get analysistemplate -A
 
 #install k6 operator
 kubectl create namespace k6
-kubectl apply -f https://github.com/grafana/k6-operator/releases/latest/download/k6-operator.yaml
+kubectl apply -f kubectl apply -f https://raw.githubusercontent.com/grafana/k6-operator/main/bundle.yaml
 
 #verify
 kubectl get pods -n k6
@@ -385,13 +385,83 @@ kubectl apply -f monitoring/grafana-myapp-canary.yaml
 kubectl apply -f argocd/root-app.yaml
 
 
-1️⃣ Install LitmusChaos (one-time)
-kubectl apply -f https://litmuschaos.github.io/litmus/litmus-operator.yaml
+1️⃣ Add Litmus Helm repo
+helm repo add litmuschaos https://litmuschaos.github.io/litmus-helm/
+helm repo update
+
+2️⃣ Create namespace
+kubectl create namespace litmus
+
+3️⃣ Install Litmus Operator (ChaosCenter optional)
+Minimal install (recommended for your setup)
+helm install litmus litmuschaos/litmus \
+  --namespace litmus \
+  --set portal.enabled=false
+
+
+This installs:
+
+chaos-operator
+
+chaos-runner
+
+CRDs (ChaosEngine, ChaosExperiment, ChaosResult)
+
+✔ Perfect for GitOps + Argo Rollouts + k6
+
+4️⃣ Verify installation
+kubectl get pods -n litmus
+
+
+Expected:
+
+chaos-operator-xxxxx     1/1   Running
+chaos-runner-xxxxx      1/1   Running
+
+
+Check CRDs:
+
+kubectl get crds | grep litmus
+
+
+You should see:
+
+chaosengines.litmuschaos.io
+chaosexperiments.litmuschaos.io
+chaosresults.litmuschaos.io
 
 Verify:
 kubectl get pods -n litmus
 
+3️⃣ Verify the secret
+kubectl get secret slack-webhook -n argocd
 
+
+You should see:
+
+NAME            TYPE     DATA   AGE
+slack-webhook   Opaque   1      10s
+
+4️⃣ How Argo CD uses this secret
+
+Argo CD Notifications automatically reads:
+
+Secret: slack-webhook
+Key: webhook-url
+
+
+No extra wiring needed once the secret exists.
+
+5️⃣ (If missing) Enable Argo CD Notifications Controller
+
+Verify:
+
+kubectl get pods -n argocd | grep notifications
+
+
+#If NOT present, install:
+
+kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj-labs/argocd-notifications/stable/manifests/install.yaml
 
 #Delete Cluster
 eksctl delete cluster --name myapp-cluster --region us-east-1 --wait
