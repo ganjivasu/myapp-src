@@ -16,6 +16,7 @@ eksctl create cluster \
   --nodes 2 \
   --node-type t3.medium
 
+
 **Configure kubectl & verify
 **
 
