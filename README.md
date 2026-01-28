@@ -474,3 +474,39 @@ kubectl argo rollouts get rollout myapp -n prod
 
 #Delete Cluster
 eksctl delete cluster --name myapp-cluster --region us-east-1 --wait
+
+
+#to enter into the container inside the pod
+kubectl exec -it -n dev \
+  $(kubectl get pod -n dev -l app=myapp -o jsonpath='{.items[0].metadata.name}') \
+  -- /bin/sh
+
+
+kubectl exec -it myapp-76d68b647-4z75f -n dev -- /bin/sh
+
+
+helm install prometheus prometheus-community/kube-prometheus-stack \
+  -n monitoring \
+  --create-namespace \
+  --skip-crds
+
+
+
+
+
+🔐 One Small Improvement (Highly Recommended)
+
+Add a pre-sync validation job or CI check:
+
+Example: GitHub Actions validation
+kustomize build myapp/overlays/prod | \
+  kubeconform -strict -ignore-missing-schemas
+
+
+This would have caught:
+
+“Rollout references AnalysisTemplate that doesn’t exist”
+
+Before Argo CD ever touched the cluster.
+
+This is exactly what top-tier platform teams do.
