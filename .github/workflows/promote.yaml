@@ -41,7 +41,7 @@ jobs:
           git checkout -b "$BRANCH"
 
           # Update image in GitOps folder for the target environment
-          ./promotion.sh "$ENV" "$IMAGE"
+          scripts/promotion.sh "$ENV" "$IMAGE"
 
           git add .
           git commit -m "Promote myapp image $IMAGE to $ENV"
