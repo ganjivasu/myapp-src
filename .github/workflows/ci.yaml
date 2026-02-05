@@ -49,7 +49,7 @@ jobs:
             --output text)
 
           IMMUTABLE_IMAGE="$ECR_REGISTRY/$ECR_REPO@$DIGEST"
-          echo "$IMMUTABLE_IMAGE" > immutable_image.txt
+          echo "$IMMUTABLE_IMAGE" >> $GITHUB_ENV
 
           cat <<EOF > promotion_metadata.json
           {
@@ -75,9 +75,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: promotion-artifacts
-          path: |
-            immutable_image.txt
-            promotion_metadata.json
+          path: promotion_metadata.json
 
       - name: Checkout GitOps Repo
         uses: actions/checkout@v4
@@ -86,46 +84,45 @@ jobs:
           token: ${{ secrets.GITHUBTOKEN }}
           path: gitops
 
-      - name: Promote Dev / PT / QA
+      - name: Promote to Dev only
         run: |
           chmod +x promotion.sh
-          ./promotion.sh dev
-          ./promotion.sh pt
-          ./promotion.sh qa
+          ./promotion.sh dev $IMMUTABLE_IMAGE
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUBTOKEN }}
 
 # -------------------------------------------------
 # 2️⃣ PROD PROMOTION (Approval-Gated)
 # -------------------------------------------------
-  deploy-prod:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: prod
+  # deploy-prod:
+  #   needs: build
+  #   runs-on: ubuntu-latest
+  #   environment:
+  #     name: prod
 
-    steps:
-      - name: Checkout App Repo
-        uses: actions/checkout@v4
+  #   steps:
+  #     - name: Checkout App Repo
+  #       uses: actions/checkout@v4
 
-      - name: Download Promotion Artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: promotion-artifacts
+  #     - name: Download Promotion Artifacts
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         name: promotion-artifacts
 
-      - name: Checkout GitOps Repo
-        uses: actions/checkout@v4
-        with:
-          repository: ${{ env.GITOPS_REPO }}
-          token: ${{ secrets.GITHUBTOKEN }}
-          path: gitops
+  #     - name: Checkout GitOps Repo
+  #       uses: actions/checkout@v4
+  #       with:
+  #         repository: ${{ env.GITOPS_REPO }}
+  #         token: ${{ secrets.GITHUBTOKEN }}
+  #         path: gitops
 
-      - name: Promote to Prod
-        run: |
-          chmod +x promotion.sh
-          ./promotion.sh prod
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUBTOKEN }}
+  #     - name: Promote to Prod
+  #       run: |
+  #         chmod +x promotion.sh
+  #         ./promotion.sh prod
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUBTOKEN }}
+
 
   # verify-prod:
   #   needs: deploy-prod

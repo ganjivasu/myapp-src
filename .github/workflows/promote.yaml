@@ -1,0 +1,57 @@
+name: Promote Image (PR-based)
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment to promote to"
+        required: true
+        type: choice
+        options:
+          - pt
+          - qa
+          - prod
+      image:
+        description: "Immutable image digest to promote"
+        required: true
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1️⃣ Checkout GitOps repo
+      - name: Checkout GitOps repo
+        uses: actions/checkout@v4
+        with:
+          repository: ganjivasu/myapp-gitops
+          token: ${{ secrets.GITHUBTOKEN }}
+
+      # 2️⃣ Create promotion branch
+      - name: Create Promotion Branch & Update Image
+        run: |
+          ENV=${{ inputs.environment }}
+          IMAGE=${{ inputs.image }}
+          BRANCH="promote-myapp-${ENV}-${GITHUB_RUN_ID}"
+
+          git checkout -b "$BRANCH"
+
+          # Update image in GitOps folder for the target environment
+          ./promotion.sh "$ENV" "$IMAGE"
+
+          git add .
+          git commit -m "Promote myapp image $IMAGE to $ENV"
+          git push origin "$BRANCH"
+
+          # Create a PR to main
+          gh pr create \
+            --title "Promote myapp to $ENV" \
+            --body "Promoting immutable image $IMAGE to $ENV environment" \
+            --base main \
+            --head "$BRANCH"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUBTOKEN }}
