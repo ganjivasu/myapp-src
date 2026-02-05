@@ -39,6 +39,7 @@ jobs:
           BRANCH="promote-myapp-${ENV}-${GITHUB_RUN_ID}"
 
           git checkout -b "$BRANCH"
+          chmod +x scripts/promotion.sh
 
           # Update image in GitOps folder for the target environment
           scripts/promotion.sh "$ENV" "$IMAGE"
