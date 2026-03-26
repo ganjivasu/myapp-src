@@ -10,11 +10,7 @@ docker --version
 **Create Cluster
 **
 
-eksctl create cluster \
-  --name myapp-cluster \
-  --region us-east-1 \
-  --nodes 2 \
-  --node-type t3.medium
+
 
 
 **Configure kubectl & verify
