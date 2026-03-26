@@ -44,17 +44,13 @@ jobs:
           IMAGE=${{ inputs.image }}
           BRANCH="promote-myapp-${ENV}-${GITHUB_RUN_ID}"
 
-          # Create branch from main
           git fetch origin main
           git checkout -b "$BRANCH"
 
-          # Make promotion script executable
           chmod +x scripts/promotion.sh
-
-          # Run promotion.sh to update kustomization.yaml, commit, and push if needed
           scripts/promotion.sh "$ENV" "$IMAGE"
 
-          # Check if branch has commits relative to main
+          # Exit gracefully if no changes
           if git diff --quiet main...HEAD; then
             echo "ℹ️ No changes to promote for $ENV, skipping PR creation"
             exit 0
