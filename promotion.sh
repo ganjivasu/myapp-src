@@ -22,6 +22,7 @@ fi
 # Split image into name + digest
 NAME=$(echo "$IMAGE" | cut -d@ -f1)
 DIGEST=$(echo "$IMAGE" | cut -d@ -f2)
+export DIGEST
 
 OVERLAY_DIR="gitops/myapp/overlays/$ENV"
 
