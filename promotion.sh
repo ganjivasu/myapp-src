@@ -36,10 +36,12 @@ git config user.name "ci-bot"
 git config user.email "ci-bot@example.com"
 
 # Update kustomization.yaml using yq
-yq -i "
-.images[0].newName = \"$NAME\" |
-.images[0].digest  = \"$DIGEST\"
-" kustomization.yaml
+#yq -i "
+#.images[0].newName = \"281762848319.dkr.ecr.us-east-1.amazonaws.com/myapp\" |
+#.images[0].digest  = \"$DIGEST\"
+#" kustomization.yaml
+
+yq -i '.images[0].newName = "281762848319.dkr.ecr.us-east-1.amazonaws.com/myapp" | .images[0].digest = env(DIGEST)' kustomization.yaml
 
 # Commit only if changes exist
 git diff --quiet && {
