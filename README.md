@@ -475,8 +475,7 @@ kubectl argo rollouts get rollout myapp -n prod
 
 
 #Delete Cluster
-eksctl delete cluster --name myapp-cluster --region us-east-1 --wait
-
+eksctl delete cluster --name myapp-cluster --region us-east-1 --wait=false
 
 #to enter into the container inside the pod
 kubectl exec -it -n dev \
