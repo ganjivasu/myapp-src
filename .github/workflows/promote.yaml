@@ -44,11 +44,13 @@ jobs:
           IMAGE=${{ inputs.image }}
           BRANCH="promote-myapp-${ENV}-${GITHUB_RUN_ID}"
 
-          # Create branch
+          # Create branch from main
           git fetch origin main
           git checkout -b "$BRANCH"
 
+          # Make promotion script executable
           chmod +x scripts/promotion.sh
+
           # Run promotion.sh to update kustomization.yaml, commit, and push if needed
           scripts/promotion.sh "$ENV" "$IMAGE"
 
@@ -60,7 +62,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUBTOKEN }}
 
-      # 4️⃣ Create Pull Request
+      # 4️⃣ Create Pull Request only if branch has commits
       - name: Create Pull Request
         run: |
           ENV=${{ inputs.environment }}
