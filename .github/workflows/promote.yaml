@@ -31,8 +31,14 @@ jobs:
           repository: ganjivasu/myapp-gitops
           token: ${{ secrets.GITHUBTOKEN }}
 
-      # 2️⃣ Create promotion branch
-      - name: Create Promotion Branch & Update Image
+      # 2️⃣ Install yq (v4+)
+      - name: Install yq
+        run: |
+          sudo wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/bin/yq
+          sudo chmod +x /usr/bin/yq
+
+      # 3️⃣ Create Promotion Branch & Run promotion.sh
+      - name: Run Promotion Script
         run: |
           ENV=${{ inputs.environment }}
           IMAGE=${{ inputs.image }}
@@ -41,14 +47,18 @@ jobs:
           git checkout -b "$BRANCH"
           chmod +x scripts/promotion.sh
 
-          # Update image in GitOps folder for the target environment
+          # Run promotion.sh to update kustomization.yaml, commit, and push
           scripts/promotion.sh "$ENV" "$IMAGE"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUBTOKEN }}
 
-          git add .
-          git commit -m "Promote myapp image $IMAGE to $ENV"
-          git push origin "$BRANCH"
+      # 4️⃣ Create Pull Request
+      - name: Create Pull Request
+        run: |
+          ENV=${{ inputs.environment }}
+          IMAGE=${{ inputs.image }}
+          BRANCH="promote-myapp-${ENV}-${GITHUB_RUN_ID}"
 
-          # Create a PR to main
           gh pr create \
             --title "Promote myapp to $ENV" \
             --body "Promoting immutable image $IMAGE to $ENV environment" \
