@@ -52,4 +52,5 @@ git diff --quiet && {
 
 git add kustomization.yaml
 git commit -m "Promote $IMAGE to $ENV"
-git push origin main
+TARGET_BRANCH="${GITOPS_TARGET_BRANCH:-main}"
+git push origin "HEAD:refs/heads/${TARGET_BRANCH}"

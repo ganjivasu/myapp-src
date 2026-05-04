@@ -14,6 +14,10 @@ on:
       image:
         description: "Immutable image digest to promote"
         required: true
+      gitops_branch:
+        description: "Branch in myapp-gitops to open PR against"
+        required: false
+        default: "main"
 
 permissions:
   contents: write
@@ -30,6 +34,7 @@ jobs:
         with:
           repository: ganjivasu/myapp-gitops
           token: ${{ secrets.GITHUBTOKEN }}
+          ref: ${{ inputs.gitops_branch }}
 
       # 2️⃣ Install yq (v4+)
       - name: Install yq
@@ -42,16 +47,18 @@ jobs:
         run: |
           ENV=${{ inputs.environment }}
           IMAGE=${{ inputs.image }}
+          BASE="${{ inputs.gitops_branch }}"
           BRANCH="promote-myapp-${ENV}-${GITHUB_RUN_ID}"
 
-          git fetch origin main
+          git fetch origin "$BASE"
+          git checkout "$BASE"
           git checkout -b "$BRANCH"
 
           chmod +x scripts/promotion.sh
-          scripts/promotion.sh "$ENV" "$IMAGE"
+          GITOPS_TARGET_BRANCH="$BRANCH" scripts/promotion.sh "$ENV" "$IMAGE"
 
           # Exit gracefully if no changes
-          if git diff --quiet main...HEAD; then
+          if git diff --quiet "$BASE"...HEAD; then
             echo "ℹ️ No changes to promote for $ENV, skipping PR creation"
             exit 0
           fi
@@ -65,10 +72,12 @@ jobs:
           IMAGE=${{ inputs.image }}
           BRANCH="promote-myapp-${ENV}-${GITHUB_RUN_ID}"
 
+          BASE="${{ inputs.gitops_branch }}"
+
           gh pr create \
             --title "Promote myapp to $ENV" \
             --body "Promoting immutable image $IMAGE to $ENV environment" \
-            --base main \
+            --base "$BASE" \
             --head "$BRANCH"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUBTOKEN }}

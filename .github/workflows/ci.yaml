@@ -2,7 +2,7 @@ name: CI Build & GitOps Promotion
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, ai-experiments ]
 
 permissions:
   id-token: write
@@ -84,6 +84,7 @@ jobs:
           repository: ${{ env.GITOPS_REPO }}
           token: ${{ secrets.GITHUBTOKEN }}
           path: gitops
+          ref: ${{ github.ref_name }}
 
       - name: Promote to Dev only
         run: |
@@ -91,6 +92,7 @@ jobs:
           ./promotion.sh dev $IMMUTABLE_IMAGE
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUBTOKEN }}
+          GITOPS_TARGET_BRANCH: ${{ github.ref_name }}
 
 # -------------------------------------------------
 # 2️⃣ PROD PROMOTION (Approval-Gated)
