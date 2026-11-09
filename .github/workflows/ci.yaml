@@ -62,7 +62,7 @@ jobs:
             "actor": "${GITHUB_ACTOR}"
           }
           EOF
-            
+          
       # k6 Canary / Smoke Test Gate
       # ---------------------------------
       # - name: Run k6 Canary Test
