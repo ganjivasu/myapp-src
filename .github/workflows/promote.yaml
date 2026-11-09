@@ -46,10 +46,12 @@ jobs:
         env:
           IMAGE: ${{ inputs.image }}
         run: |
-          if [[ ! "$IMAGE" =~ ^[0-9]{12}\.dkr\.ecr\.[a-z0-9-]+\.amazonaws\.com/myapp@sha256:[a-f0-9]{64}$ ]]; then
-            echo "Invalid ECR image digest"
+          if [[ ! "$IMAGE" =~ ^sha256:[a-f0-9]{64}$ ]]; then
+            echo "Invalid image digest"
             exit 1
           fi
+      
+          echo "Valid image digest: $IMAGE"
 
       - name: Update GitOps manifests
         id: update
