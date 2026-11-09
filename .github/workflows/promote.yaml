@@ -1,10 +1,11 @@
+
 name: Promote Image (PR-based)
 
 on:
   workflow_dispatch:
     inputs:
       environment:
-        description: "Target environment to promote to"
+        description: Target environment
         required: true
         type: choice
         options:
@@ -12,63 +13,88 @@ on:
           - qa
           - prod
       image:
-        description: "Immutable image digest to promote"
+        description: Full ECR image URI with immutable SHA256 digest
         required: true
+        type: string
 
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
 
 jobs:
   promote:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout GitOps repo
-      - name: Checkout GitOps repo
-        uses: actions/checkout@v5
+      - name: Checkout GitOps repository
+        uses: actions/checkout@v4
         with:
           repository: ganjivasu/myapp-gitops
           token: ${{ secrets.GITHUBTOKEN }}
+          ref: main
+          persist-credentials: false
 
-      # 2️⃣ Install yq (v4+)
       - name: Install yq
         run: |
-          sudo wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/bin/yq
-          sudo chmod +x /usr/bin/yq
+          YQ_VERSION=v4.45.1
+          curl -fsSL \
+            "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64" \
+            -o /tmp/yq
+          sudo install -m 755 /tmp/yq /usr/local/bin/yq
+          yq --version
 
-      # 3️⃣ Create promotion branch and run promotion.sh
-      - name: Run Promotion Script
+      - name: Validate promotion input
+        env:
+          IMAGE: ${{ inputs.image }}
         run: |
-          ENV=${{ inputs.environment }}
-          IMAGE=${{ inputs.image }}
-          BRANCH="promote-myapp-${ENV}-${GITHUB_RUN_ID}"
+          if [[ ! "$IMAGE" =~ ^[0-9]{12}\.dkr\.ecr\.[a-z0-9-]+\.amazonaws\.com/myapp@sha256:[a-f0-9]{64}$ ]]; then
+            echo "Invalid ECR image digest"
+            exit 1
+          fi
 
-          git fetch origin main
+      - name: Update GitOps manifests
+        id: update
+        env:
+          ENVIRONMENT: ${{ inputs.environment }}
+          IMAGE: ${{ inputs.image }}
+          GH_TOKEN: ${{ secrets.GITHUBTOKEN }}
+        run: |
+          set -euo pipefail
+
+          BRANCH="promote-myapp-${ENVIRONMENT}-${GITHUB_RUN_ID}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
           git checkout -b "$BRANCH"
 
           chmod +x scripts/promotion.sh
-          scripts/promotion.sh "$ENV" "$IMAGE"
+          scripts/promotion.sh "$ENVIRONMENT" "$IMAGE"
 
-          # Exit gracefully if no changes
-          if git diff --quiet main...HEAD; then
-            echo "ℹ️ No changes to promote for $ENV, skipping PR creation"
+          if [[ -z "$(git status --porcelain)" ]]; then
+            echo "No changes detected"
+            echo "changed=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
+
+          git add -A
+          git commit -m "Promote myapp to ${ENVIRONMENT}"
+          git -c http.extraheader="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)" \
+            push origin "$BRANCH"
+
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+          echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
+
+      - name: Create promotion pull request
+        if: steps.update.outputs.changed == 'true'
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUBTOKEN }}
-
-      # 4️⃣ Create Pull Request only if branch has commits
-      - name: Create Pull Request
+          GH_TOKEN: ${{ secrets.GITHUBTOKEN }}
+          ENVIRONMENT: ${{ inputs.environment }}
+          IMAGE: ${{ inputs.image }}
+          BRANCH: ${{ steps.update.outputs.branch }}
         run: |
-          ENV=${{ inputs.environment }}
-          IMAGE=${{ inputs.image }}
-          BRANCH="promote-myapp-${ENV}-${GITHUB_RUN_ID}"
-
           gh pr create \
-            --title "Promote myapp to $ENV" \
-            --body "Promoting immutable image $IMAGE to $ENV environment" \
+            --repo ganjivasu/myapp-gitops \
+            --title "Promote myapp to ${ENVIRONMENT}" \
+            --body "Promoting immutable image ${IMAGE} to ${ENVIRONMENT}" \
             --base main \
             --head "$BRANCH"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUBTOKEN }}
